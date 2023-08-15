@@ -1207,13 +1207,12 @@ function g.key(x, y, z) _gridkey(x, y, z)
 end
 
 function gridredraw()
-  g:all(0)
   for i = 1, PSET_SLOTS do
     g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
   end
-  g:all(0)
+  -- g:all(0)
   for i = 1, PSET_SLOTS do
-    g:led(i, 8, params:get("pset_slot"..i) > 1 and 8 or 3)
+    g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
   end
   g:refresh()
 end
@@ -1962,6 +1961,7 @@ init = function()
   softcut.event_position(get_pos)
 
   print("mlre loaded and ready. enjoy!")
+
 end -- end of init
 
 phase = function(n, x)
