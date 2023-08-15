@@ -65,6 +65,83 @@ local arc_inc_focus = 0
 local scrub_sens = 100
 local tau = math.pi * 2
 
+local PSET_SLOTS = 8
+local pset_list = {"none"}
+
+-- for pset recall
+function load_slot_data()
+  local loaded_file = io.open(norns.state.data .. "pset_slot_settings.data", "r")
+  if loaded_file then
+    local loaded_pset_data = tab.load(norns.state.data .. "pset_slot_settings.data")
+    for i = 1, PSET_SLOTS do
+      params:set("pset_slot" .. i, loaded_pset_data.slot[i])
+    end
+    print("pset_slot data loaded")
+  else
+    print("error: no pset_slot data")
+  end
+end
+
+function save_slot_data()
+  local saved_pset_data = {}
+  saved_pset_data.slot = {}
+  for i = 1, PSET_SLOTS do
+    saved_pset_data.slot[i] = params:get("pset_slot" .. i)
+  end
+  tab.save(saved_pset_data, norns.state.data .. "pset_slot_settings.data")
+  print("pset_slot data saved")
+end
+
+function build_pset_list()
+  local files_data = util.scandir(norns.state.data)
+  pset_list = { "none" }
+  for i = 1, #files_data do
+    if files_data[i]:match("^.+(%..+)$") == ".pset" then
+      local loaded_file = io.open(norns.state.data .. files_data[i], "r")
+      if loaded_file then
+        io.input(loaded_file)
+        local pset_name = string.sub(io.read(), 4, -1)
+        table.insert(pset_list, pset_name)
+        io.close(loaded_file)
+      end
+    end
+  end
+end
+
+function update_slot_params()
+  for i = 1, PSET_SLOTS do
+    local p = params:lookup_param("pset_slot" .. i)
+    p.options = { table.unpack(pset_list) }
+    p.count = #pset_list
+    p:bang()
+    if params:string("pset_slot" .. i) == nil then
+      params:set("pset_slot" .. i, 1)
+      save_slot_data()
+    end
+  end
+  --print("updated params")
+end
+
+function get_pset_number(name)
+  local files_data = util.scandir(norns.state.data)
+  for i = 1, #files_data do
+    if files_data[i]:match("^.+(%..+)$") == ".pset" then
+      local loaded_file = io.open(norns.state.data .. files_data[i], "r")
+      if loaded_file then
+        io.input(loaded_file)
+        local pset_id = string.sub(io.read(), 4, -1)
+        if name == pset_id then
+          local filename = norns.state.data .. files_data[i]
+          local pset_string = string.sub(filename, string.len(filename) - 6, -1)
+          local number = pset_string:gsub(".pset", "")
+          return util.round(number, 1) -- better to use tonumber?
+        end
+        io.close(loaded_file)
+      end
+    end
+  end
+end
+
 -- for transpose scales
 local scale_options = {"major", "natural minor", "harmonic minor", "melodic minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian", "custom"}
 
@@ -1115,14 +1192,26 @@ function screenredraw()
   end
 end
 
-function g.key(x, y, z) _gridkey(x, y, z) end
+-- load psets via grid
+function g.key(x, y, z)
+  if z == 1 then
+    if y == 8 and x <= PSET_SLOTS then -- need to adapt this to your use case. here PSET_SLOTS < 16
+      local i = x
+      if params:get("pset_slot" .. i) ~= 1 then
+        local pset_num = get_pset_number(params:string("pset_slot" .. i))
+        params:read(pset_num)
+      end
+    end
+  end
+  gridredraw()
+end
 
 function gridredraw()
-  if not g then return end
-  if dirtygrid == true then
-    _gridredraw()
-    dirtygrid = false
+  g:all(0)
+  for i = 1, PSET_SLOTS do
+    g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
   end
+  g:refresh()
 end
 
 function a.delta(n, d) _arcdelta(n, d) end
@@ -1332,6 +1421,63 @@ init = function()
 
   -- params for "globals"
   params:add_separator("global_params", "global")
+
+  -- build pset list before pset_slot params
+  build_pset_list()
+
+  -- pset slot params
+  params:add_group("pset_params", "pset slots", 1 + PSET_SLOTS)
+  for i = 1, PSET_SLOTS do
+    params:add_option("pset_slot" .. i, "slot " .. i, pset_list, 1)
+    params:set_action("pset_slot" .. i, function() gridredraw() end)
+  end
+  params:add_binary("save_pset_slots", ">> save slot settings", "trigger", 0)
+  params:set_action("save_pset_slots", function() save_slot_data() end)
+
+  params:bang()
+
+  -- set pset_slots to saved settings
+  load_slot_data()
+
+  gridredraw()
+
+  -- pset callbacks
+  params.action_write = function(filename, name, number)
+    -- your code
+    --
+    -- rebuild pset list and update param attributes
+    clock.run(
+      function()
+        clock.sleep(0.5) -- haven't checked the timings. most probably is less is ok.
+        build_pset_list()
+        clock.sleep(0.5)
+        update_slot_params()
+      end
+    )
+    print("finished writing pset:'" .. name .. "'")
+  end
+
+  params.action_read = function(filename, silent, number)
+    -- your code
+    --
+    -- set pset_slots to saved settings
+    load_slot_data()
+  end
+
+  params.action_delete = function(filename, name, number)
+    -- your code
+    --
+    -- rebuild pset list and update param attributes
+    clock.run(
+      function()
+        clock.sleep(0.5)
+        build_pset_list()
+        clock.sleep(0.5)
+        update_slot_params()
+      end
+    )
+    print("finished deleting pset:'" .. name .. "'")
+  end
 
   -- params for scales
   params:add_option("scale", "scale", scale_options, 1)
@@ -3491,4 +3637,5 @@ function cleanup()
     pattern[i] = nil
   end
   grid.add = function() end
+  save_slot_data()
 end
