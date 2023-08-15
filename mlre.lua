@@ -1207,8 +1207,10 @@ function g.key(x, y, z) _gridkey(x, y, z)
 end
 
 function gridredraw()
-  for i = 1, PSET_SLOTS do
-    g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
+  if not g then return end
+  if dirtygrid == true then
+    _gridredraw()
+    dirtygrid = false
   end
   -- g:all(0)
   for i = 1, PSET_SLOTS do
