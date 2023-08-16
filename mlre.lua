@@ -65,7 +65,7 @@ local arc_inc_focus = 0
 local scrub_sens = 100
 local tau = math.pi * 2
 
-local PSET_SLOTS = 8
+local PSET_SLOTS = 16
 local pset_list = {"none"}
 
 -- for pset recall
