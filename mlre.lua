@@ -1179,31 +1179,13 @@ function screenredraw()
   end
 end
 
--- load psets via grid
-function g.key(x, y, z)
-  _gridkey(x, y, z)
-  if z == 1 then
-    if y == 8 and x <= PSET_SLOTS then -- need to adapt this to your use case. here PSET_SLOTS < 16
-      local i = x
-      if params:get("pset_slot" .. i) ~= 1 then
-        local pset_num = get_pset_number(params:string("pset_slot" .. i))
-        params:read(pset_num)
-      end
-    end
-  end
-  gridredraw()
-end
+function g.key(x, y, z) _gridkey(x, y, z) end
 
 function gridredraw()
-  g:all(0)
   if not g then return end
-  for i = 1, PSET_SLOTS do
-    g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
-  end
   if dirtygrid == true then
     _gridredraw()
     dirtygrid = false
-    g:refresh()
   end
 end
 
@@ -3554,8 +3536,16 @@ v.gridkey[vCLIP] = function(x, y, z)
     elseif y == 8 and x < 9 then
       params:set("quant_div", x)
     end
+    if y == 8 and x <= PSET_SLOTS then -- need to adapt this to your use case. here PSET_SLOTS < 16
+      local i = x
+      if params:get("pset_slot"..i) ~= 1 then
+        local pset_num = get_pset_number(params:string("pset_slot"..i))
+        params:read(pset_num)
+      end
+    end
     dirtyscreen = true
     dirtygrid = true
+    gridredraw()
   end
 end
 
@@ -3599,6 +3589,9 @@ v.gridredraw[vCLIP] = function()
   end
   for i = 1, 8 do
     g:led(i, 8, 4)
+  end
+  for i = 1, PSET_SLOTS do
+    g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
   end
   g:led(params:get("quant_div"), 8, 10)
   g:refresh()
