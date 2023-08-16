@@ -3403,7 +3403,9 @@ v.enc[vCLIP] = function(n, d)
       params:delta(track[clip_sel].clip.."clip_length", d)
     end
   else
-    if n == 2 then
+    if n == 1 then
+      params:delta("quant_div", d) -- this is the new bit. use ENC1 to change quant
+    elseif n == 2 then
       params:delta(clip_sel.."send_track5", d)
     elseif n == 3 then
       params:delta(clip_sel.."send_track6", d)
@@ -3532,9 +3534,9 @@ v.gridkey[vCLIP] = function(x, y, z)
       set_track_source()
     elseif y == 7 and x == 16 then
       route.tape = 1 - route.tape
-      set_track_source()
-    elseif y == 8 and x < 9 then
-      params:set("quant_div", x)
+    --   set_track_source()
+    -- elseif y == 8 and x < 9 then
+    --   params:set("quant_div", x)
     end
     if y == 8 and x <= PSET_SLOTS then -- need to adapt this to your use case. here PSET_SLOTS < 16
       local i = x
@@ -3593,7 +3595,7 @@ v.gridredraw[vCLIP] = function()
   for i = 1, PSET_SLOTS do
     g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
   end
-  g:led(params:get("quant_div"), 8, 10)
+  -- g:led(params:get("quant_div"), 8, 10)
   g:refresh()
 end
 
