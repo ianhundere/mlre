@@ -65,7 +65,7 @@ local arc_inc_focus = 0
 local scrub_sens = 100
 local tau = math.pi * 2
 
-local PSET_SLOTS = 8
+local PSET_SLOTS = 15
 local pset_list = {"none"}
 
 -- for pset recall
@@ -1193,7 +1193,22 @@ function screenredraw()
 end
 
 -- load psets via grid
-function g.key(x, y, z) _gridkey(x, y, z)
+-- function g.key(x, y, z) _gridkey(x, y, z)
+--   if z == 1 then
+--     if y == 8 and x <= PSET_SLOTS then -- need to adapt this to your use case. here PSET_SLOTS < 16
+--       local i = x
+--       if params:get("pset_slot" .. i) ~= 1 then
+--         local pset_num = get_pset_number(params:string("pset_slot" .. i))
+--         params:read(pset_num)
+--       end
+--     end
+--   end
+--   gridredraw()
+-- end
+
+-- load psets via grid
+function g.key(x, y, z)
+  _gridkey(x, y, z)
   if z == 1 then
     if y == 8 and x <= PSET_SLOTS then -- need to adapt this to your use case. here PSET_SLOTS < 16
       local i = x
@@ -1211,12 +1226,12 @@ function gridredraw()
   if dirtygrid == true then
     _gridredraw()
     dirtygrid = false
+    g:all(0)
+    for i = 1, PSET_SLOTS do
+      g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
+    end
+    g:refresh()
   end
-  -- g:all(0)
-  for i = 1, PSET_SLOTS do
-    g:led(i, 8, params:get("pset_slot" .. i) > 1 and 8 or 3)
-  end
-  g:refresh()
 end
 
 function a.delta(n, d) _arcdelta(n, d) end
@@ -1949,10 +1964,6 @@ init = function()
   else
     params:bang()
   end
-
-  load_slot_data()
-
-  gridredraw()
 
   for i = 1, 6 do
     stop_track(i) -- set all track levels to 0 post params:bang
