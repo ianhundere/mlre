@@ -1521,8 +1521,10 @@ init = function()
     -- track volume
     params:add_control(i.."vol", "vol", controlspec.new(0, 1, 'lin', 0, 1, ""))
     params:set_action(i.."vol", function(x) track[i].level = x set_level(i) end)
+    params:set_save(i.."vol", false)
     -- track pan
     params:add_control(i.."pan", "pan", controlspec.new(-1, 1, 'lin', 0, 0, ""))
+    params:set_save(i.."pan", false)
     params:set_action(i.."pan", function(x) softcut.pan(i, x) if view < vLFO and pageNum == 1 then dirtyscreen = true end end)
     -- record level
     params:add_control(i.."rec", "rec", controlspec.new(0, 1, 'lin', 0, 1, ""))
@@ -1556,12 +1558,15 @@ init = function()
     -- cutoff
     params:add_control(i.."cutoff", "cutoff", controlspec.new(20, 18000, 'exp', 1, 18000, "Hz"))
     params:set_action(i.."cutoff", function(x) softcut.post_filter_fc(i, x) if view < vLFO and pageNum == 2 then dirtyscreen = true end end)
+    params:set_save(i.."cutoff", false)
     -- filter q
     params:add_control(i.."filter_q", "filter q", controlspec.new(0.1, 4.0, 'exp', 0.01, 2.0, ""))
     params:set_action(i.."filter_q", function(x) softcut.post_filter_rq(i, x) if view < vLFO and pageNum == 2 then dirtyscreen = true end end)
+    params:set_save(i.."filter_q", false)
     -- filter type
     params:add_option(i.."filter_type", "type", {"low pass", "high pass", "band pass", "band reject", "off"}, 1)
     params:set_action(i.."filter_type", function() filter_select(i) end)
+    params:set_save(i.."filter_type", false)
     -- post filter dry level
     params:add_control(i.."post_dry", "dry level", controlspec.new(0, 1, 'lin', 0, 0, ""))
     params:set_action(i.."post_dry", function(x) track[i].dry_level = x softcut.post_filter_dry(i, x) if view < vLFO and pageNum == 2 then dirtyscreen = true end end)
