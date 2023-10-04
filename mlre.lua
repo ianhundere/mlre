@@ -31,7 +31,7 @@ local mu = require 'musicutil'
 local lfo = include 'lib/hnds_mlre'
 
 -- variables
-local pset_load = false
+local pset_load = true
 local pageNum = 1
 local pageArc = 1
 local scale_idx = 1
@@ -485,13 +485,12 @@ for i = 1, 6 do
   track[i].speed = 0
   track[i].warble = 0
   track[i].rev = 0
-  track[i].tempo_map = 0
+  track[i].tempo_map = 1
   track[i].trsp = 8
   track[i].transpose = 0
   track[i].fade = 0
   track[i].buffer = 0
   track[i].side = 0
-  track[i].buffer_load = false
 end
 
 set_clip_length = function(i, len, bar_count)
@@ -667,10 +666,24 @@ function set_buffer(n) -- select softcut buffer to record to
   if view == vREC then dirtygrid = true end
 end
 
-function copy_buffer(i, src, dst) -- copy active buffer to the other buffer
-  dst_name = dst == 1 and "main" or "temp"
-  softcut.buffer_copy_mono(src, dst, clip[track[i].clip].s, clip[track[i].clip].s, max_cliplength)
-  show_message("clip " .. track[i].clip .. " copied to " .. dst_name .. " buffer")
+function copy_buffer(i) -- copy active buffer to the other buffer
+  local src_ch
+  local dst_ch
+  local src_name = ""
+  local dst_name = ""
+  if params:get(i.."buffer_sel") == 1 then
+    src_ch = 1
+    dst_ch = 2
+    src_name = "main"
+    dst_name = "temp"
+  else
+    src_ch = 2
+    dst_ch = 1
+    src_name = "temp"
+    dst_name = "main"
+  end
+  softcut.buffer_copy_mono(src_ch, dst_ch, clip[track[i].clip].s, clip[track[i].clip].s, max_cliplength)
+  show_message("clip "..track[i].clip.." copied to "..dst_name.." buffer")
 end
 
 -- for track routing
@@ -1396,6 +1409,9 @@ end
 -- init
 init = function()
 
+  -- save tempo
+  params:set_save("clock_tempo", true)
+
   -- params for "globals"
   params:add_separator("global_params", "global")
 
@@ -1419,7 +1435,7 @@ init = function()
   params:add_control("rec_threshold", "rec threshold", controlspec.new(-40, 6, 'lin', 0.01, -12, "dB"))
 
   -- tempo map behaviour
-  params:add_option("t_map_mode", "tempo-map mode", {"resize", "repitch"}, 1)
+  params:add_option("t_map_mode", "tempo-map mode", {"resize", "repitch"}, 2)
 
   -- macro params
   params:add_group("macro_params", "macros", 2)
@@ -1772,9 +1788,6 @@ init = function()
       -- load buffer content
       --softcut.buffer_clear()
       softcut.buffer_read_mono(norns.state.data.."sessions/"..number.."/"..pset_id.."_buffer.wav", 0, 0, -1, 1, 1)
-      for i = 1, 6 do
-        track[i].buffer_load = true
-      end
 
       -- load sesh data
       sesh_data = tab.load(norns.state.data.."sessions/"..number.."/"..pset_id.."_session.data")
@@ -1799,7 +1812,8 @@ init = function()
         track[i].clip = sesh_data[i].track_clip
         set_clip(i, track[i].clip)
         track[i].tempo_map = sesh_data[i].track_tempo_map
-        if track[i].tempo_map == 1 then clip_resize(i) end
+        -- DO NOT resize clip when loading preset, resize when retriggering clip
+        --if track[i].tempo_map == 1 then clip_resize(i) end
         track[i].sel = sesh_data[i].track_sel
         track[i].fade = sesh_data[i].track_fade
         track[i].warble = sesh_data[i].track_warble
@@ -2511,10 +2525,7 @@ v.gridkey[vREC] = function(x, y, z)
         local cut = x - 1
         e = {} e.t = eCUT e.i = i e.pos = cut
         event(e)
-        if track[i].buffer_load then
-          copy_buffer(i, 2, 1)
-          track[i].buffer_load = false
-        end
+        if track[i].tempo_map == 1 then clip_resize(i) end
       elseif held[row] == 2 then -- second keypress
         second[row] = x
       end
@@ -2912,10 +2923,7 @@ v.gridkey[vCUT] = function(x, y, z)
         local cut = x - 1
         e = {} e.t = eCUT e.i = i e.pos = cut
         event(e)
-        if track[i].buffer_load then
-          copy_buffer(i, 2, 1)
-          track[i].buffer_load = false
-        end
+        if track[i].tempo_map == 1 then clip_resize(i) end
       elseif y < 8 and held[y] == 2 then
         second[y] = x
       end
@@ -2977,7 +2985,7 @@ v.gridkey[vTRSP] = function(x, y, z)
         focus = i
         dirtyscreen = true
       end
-      if alt == 0 and alt2 == 0 then
+      if alt2 == 0 then
         if x >= 1 and x <=8 then e = {} e.t = eTRSP e.i = i e.trsp = x event(e) end
         if x >= 9 and x <=16 then e = {} e.t = eTRSP e.i = i e.trsp = x - 1 event(e) end
       end
@@ -3015,10 +3023,6 @@ v.gridkey[vTRSP] = function(x, y, z)
         local cut = x - 1
         e = {} e.t = eCUT e.i = i e.pos = cut
         event(e)
-        if track[i].buffer_load then
-          copy_buffer(i, 2, 1)
-          track[i].buffer_load = false
-        end
       elseif held[row] == 2 then
         second[row] = x
       end
@@ -3518,12 +3522,8 @@ v.gridkey[vCLIP] = function(x, y, z)
         if x ~= track[clip_sel].clip then
           set_clip(clip_sel, x)
         end
-      elseif alt == 0 and alt2 == 1 then
-        params:set(clip_sel .. "buffer_sel", track[clip_sel].side == 0 and 2 or 1)
-      elseif alt == 1 and alt2 == 0 then
-        local src = track[clip_sel].side == 0 and 1 or 2
-        local dst = track[clip_sel].side == 0 and 2 or 1
-        copy_buffer(clip_sel, src, dst)
+      elseif alt2 == 1 then
+        copy_buffer(clip_sel)
       end
     elseif y > 1 and y < 8 and x > 9 and x < 14 then
       local i = y - 1
