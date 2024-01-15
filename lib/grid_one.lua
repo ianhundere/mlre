@@ -104,7 +104,7 @@ function grd_one.nav(x, z)
       elseif x == 15 and mod == 1 then set_view(vPATTERNS)
       elseif x == 14 and alt == 0 then mod = 1
       elseif x == 14 and alt == 1 then retrig()  -- set all playing tracks to pos 1
-      elseif x == 13 and alt == 0 then stopall() -- stops all tracks
+      -- elseif x == 13 and alt == 0 then stopall() -- stops all tracks
       elseif x == 13 and alt == 1 then altrun()  -- stops all running tracks and runs all stopped tracks if track[i].sel == 1
     end
   elseif z == 0 then

@@ -36,7 +36,7 @@ pattern_time = include 'lib/pattern_time_mlre'
 
 
 --------- variables --------
-pset_load = false
+pset_load = true
 load_silent = false
 mlre_path = _path.audio .. "mlre/"
 
@@ -1773,7 +1773,7 @@ function init()
   -- build pset list
   build_pset_list()
   -- save tempo
-  params:set_save("clock_tempo", true)
+  -- params:set_save("clock_tempo", true)
   -- params for "globals"
   params:add_separator("global_params", "global")
   -- params for scales
