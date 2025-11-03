@@ -1880,22 +1880,24 @@ end
 function chop_thresh_rec(i)
   if track[i].rec_thresh == 1 then
     if autolength then
-      -- get length of recording
       local length = rec_dur / 100
-      -- set splice markers
-      local beat_num = get_beatnum(length)
+      local num_beats = get_beatnum(length)
+      if tempo_autoset == i then
+        local t, n, l = get_bpm(length)
+        num_beats = n
+        length = l
+        params:set("clock_tempo", t)
+      end
       local s = track[i].splice_active
       tp[i].splice[s].l = length
       tp[i].splice[s].e = tp[i].splice[s].s + length
       tp[i].splice[s].init_start = tp[i].splice[s].s
       tp[i].splice[s].init_len = length
-      tp[i].splice[s].beatnum = beat_num
-      tp[i].splice[s].bpm = 60 / length * beat_num
-      -- set clip
+      tp[i].splice[s].beatnum = num_beats
+      tp[i].splice[s].bpm = 60 / length * num_beats
       set_clip(i)
       set_info(i, s)
     else
-      -- set loop points
       local lstart = math.min(loop_pos, track[i].pos_grid)
       local lend = math.max(loop_pos, track[i].pos_grid)
       loop_event(i, lstart, lend)
@@ -2911,7 +2913,7 @@ function init()
   params:set_action("rec_launch", function(mode) rec_launch = mode end)
 
   -- rec params
-  params:add_group("rec_params", "recording", 6)
+  params:add_group("rec_params", "recording", 7)
 
   params:add_option("rec_default", "rec key default", {"toggle", "one-shot"}, 1)
   params:set_action("rec_default", function(option) rec_default_mode = option end)
@@ -2937,6 +2939,9 @@ function init()
 
   params:add_option("rec_backup", "auto-backup", {"off", "on"})
   params:set_action("rec_backup", function(mode) autobackup = mode == 2 and true or false end)
+
+  params:add_option("tempo_autoset", "autolength set tempo", {"off", "track 1", "track 2", "track 3", "track 4", "track 5", "track 6"})
+  params:set_action("tempo_autoset", function(val) tempo_autoset = val - 1 end)
 
   -- macro params
   params:add_group("snap_params", "snapshots", 10)
@@ -4145,9 +4150,25 @@ function build_trig_menu(i)
   _menu.rebuild_params()
 end
 
+-- get number of beats at current tempo
 function get_beatnum(length)
   local beatnum = util.round_up(length / beat_sec, 1)
   return beatnum
+end
+
+-- caluclate temp from track length
+function get_bpm(length)
+  local bpm = 60/length
+  local num_beats = 1
+  while true do
+    if bpm > 87 then
+      num_beats = math.floor(bpm/(60/length))
+      bpm = util.round(bpm, 0.1)
+      length = (60/bpm) * num_beats
+      return bpm, num_beats, length
+    end
+    bpm = bpm * 2
+  end
 end
 
 function round_form(param, quant, form)
