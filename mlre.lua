@@ -1,4 +1,4 @@
--- mlre v2.2.0 @sonocircuit
+-- mlre v2.2.1 @sonocircuit
 -- llllllll.co/t/mlre
 --
 -- an adaption of
@@ -1887,6 +1887,7 @@ function chop_thresh_rec(i)
         num_beats = n
         length = l
         params:set("clock_tempo", t)
+        params:set("clock_reset", 1)
       end
       local s = track[i].splice_active
       tp[i].splice[s].l = length
