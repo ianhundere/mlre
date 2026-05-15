@@ -2971,7 +2971,7 @@ function init()
   params:add_option("snap_transpose_state", "transposition", {"ignore", "recall"}, 2)
   params:set_action("snap_transpose_state", function(x) snapop.transpose = x == 2 and true or false end)
 
-  params:add_option("snap_set_route", "track sends", {"ignore", "recall"}, 2)
+  params:add_option("snap_set_route", "track sends", {"ignore", "recall"}, 1)
   params:set_action("snap_set_route", function(x) snapop.sends = x == 2 and true or false end)
 
   params:add_option("snap_lfo_state", "lfo state", {"ignore", "recall"}, 2)
