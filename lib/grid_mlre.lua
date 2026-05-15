@@ -497,7 +497,7 @@ function grd.cut_draw(offset)
     local has_loop = track[i].loop == 1
     local has_playhead = track[i].play == 1
     if muted then
-      g:led(16, i + 1 + off, 2)
+      g:led(16, i + 1 + off, track_focus == i and 6 or 2)
     end
     if has_loop then
       for x = math.floor(track[i].loop_start), math.ceil(track[i].loop_end) do
