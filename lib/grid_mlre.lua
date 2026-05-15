@@ -507,7 +507,7 @@ function grd.cut_draw(offset)
     if has_playhead then
       local level
       if muted then
-        level = track[i].loaded and (track_focus == i and 7 or 5) or 3
+        level = track[i].loaded and (track_focus == i and 9 or 5) or 3
       else
         level = track[i].loaded and (track_focus == i and 15 or 10) or pulse_key_mid
       end
