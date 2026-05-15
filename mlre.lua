@@ -2959,7 +2959,7 @@ function init()
   params:add_option("snap_rec_state", "rec state", {"ignore", "recall"}, 2)
   params:set_action("snap_rec_state", function(x) snapop.rec = x == 2 and true or false end)
 
-  params:add_option("snap_mute_state", "mute state", {"ignore", "recall"}, 2)
+  params:add_option("snap_mute_state", "mute state", {"ignore", "recall"}, 1)
   params:set_action("snap_mute_state", function(x) snapop.mute = x == 2 and true or false end)
 
   params:add_option("snap_rev_state", "rev state", {"ignore", "recall"}, 2)
