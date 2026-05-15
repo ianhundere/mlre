@@ -509,7 +509,7 @@ function grd.cut_draw(offset)
       if muted then
         level = track[i].loaded and (track_focus == i and 7 or 5) or 3
       else
-        level = track[i].loaded and (track_focus == i and 15 or 12) or pulse_key_mid
+        level = track[i].loaded and (track_focus == i and 15 or 10) or pulse_key_mid
       end
       g:led(track[i].pos_grid, i + 1 + off, level)
     end
