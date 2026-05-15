@@ -493,13 +493,25 @@ end
 function grd.cut_draw(offset)
   local off = offset or 0
   for i = 1, 6 do
-    if track[i].loop == 1 then
+    local muted = track[i].mute == 1
+    local has_loop = track[i].loop == 1
+    local has_playhead = track[i].play == 1
+    if muted then
+      g:led(16, i + 1 + off, 2)
+    end
+    if has_loop then
       for x = math.floor(track[i].loop_start), math.ceil(track[i].loop_end) do
-        g:led(x, i + 1 + off, 4)
+        g:led(x, i + 1 + off, muted and 3 or 4)
       end
     end
-    if track[i].play == 1 then
-      g:led(track[i].pos_grid, i + 1 + off, track[i].loaded and (track_focus == i and 15 or 12) or pulse_key_mid)
+    if has_playhead then
+      local level
+      if muted then
+        level = track[i].loaded and (track_focus == i and 7 or 5) or 3
+      else
+        level = track[i].loaded and (track_focus == i and 15 or 12) or pulse_key_mid
+      end
+      g:led(track[i].pos_grid, i + 1 + off, level)
     end
   end
   g:led(8, 8 + off, 6)
